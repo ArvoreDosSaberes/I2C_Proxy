@@ -82,6 +82,27 @@ BaseType_t releaseI2C(uint8_t port);
 
 > A ideia é que **todas as tasks** que acessam o mesmo barramento chamem `takeI2C` antes de operações I2C e `releaseI2C` depois, garantindo exclusão mútua.
 
+### Macro de compilação `I2C_USE_FREERTOS`
+
+No código da classe `I2C` existe o uso condicional de:
+
+```cpp
+#ifdef I2C_USE_FREERTOS
+    #include "I2C_freeRTOS.hpp"
+    #include "FreeRTOS.h"
+#endif
+```
+
+Ou seja:
+
+- **Quando `I2C_USE_FREERTOS` está definida** (por `-DI2C_USE_FREERTOS` no CMake ou `#define I2C_USE_FREERTOS` antes dos includes):
+  - A biblioteca passa a integrar-se com as rotinas de semáforo de `I2C_freeRTOS.hpp`.
+  - O fluxo típico é: `takeI2C` / operações I2C / `releaseI2C`.
+
+- **Quando `I2C_USE_FREERTOS` NÃO está definida**:
+  - A classe `I2C` funciona em modo "bare metal", sem dependência direta de FreeRTOS.
+  - O controle de concorrência (se necessário) fica a cargo da aplicação.
+
 ## Exemplo de uso básico (sem FreeRTOS)
 
 ```cpp
