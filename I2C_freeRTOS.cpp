@@ -6,7 +6,7 @@
 
 #include "stdio.h"
 
-#include "log.h"
+#include "log_vt100.h"
 #include "I2C_freeRTOS.hpp"
 
 extern "C" {

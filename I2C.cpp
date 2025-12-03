@@ -1,5 +1,5 @@
 #include "I2C.hpp"
-#include "log.h"
+#include "log_vt100.h"
 #include <cstdint>
 #ifdef I2C_USE_FREERTOS
 #include "I2C_freeRTOS.hpp"
