@@ -28,11 +28,14 @@ public:
      */
     I2C(i2c_inst_t *i2c_instance, uint sda_pin, uint scl_pin);
     /** Inicia o periférico e configura GPIOs. */
-    void begin();
+    void begin(uint clock = 400000);
     /** Desabilita o periférico e retorna GPIOs ao estado padrão. */
     void end();
     /** Ajusta a frequência do clock I2C (Hz). */
     void setClock(uint frequency);
+
+    /** Retorna o ponteiro para a instância de hardware I2C em uso (i2c0 ou i2c1). */
+    i2c_inst_t *getI2CPort() const;
 
     /** Inicia transmissão para um endereço de 7 bits. */
     void beginTransmission(uint8_t address, bool nostop = false);
@@ -64,12 +67,12 @@ private:
     /** Endereço de destino da transmissão atual. */
     uint8_t _txAddress;
     /** Buffer de recepção. */
-    uint8_t _rxBuffer[32];
+    uint8_t _rxBuffer[64];
     uint8_t _rxBufferIndex;
     uint8_t _rxBufferLength;
 
     /** Buffer de transmissão. */
-    uint8_t _txBuffer[32];
+    uint8_t _txBuffer[1024 * 8];
     uint8_t _txBufferIndex;
     uint8_t _txBufferLength;
 

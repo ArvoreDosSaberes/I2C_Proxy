@@ -1,8 +1,9 @@
 #include "I2C.hpp"
 #include "log_vt100.h"
 #include <cstdint>
-#ifdef I2C_USE_FREERTOS
-#include "I2C_freeRTOS.hpp"
+#include <pico/types.h>
+#if defined (I2C_USE_FREERTOS) && I2C_USE_FREERTOS == 1
+#include "freertos/I2C_freeRTOS.hpp"
 #include "FreeRTOS.h"
 #endif
 
@@ -24,7 +25,7 @@ I2C::I2C(i2c_inst_t *i2c_instance, uint sda_pin, uint scl_pin) {
 
     LOG_INFO("[I2C] Inicializando I2C para o port %d", _port);
 
-    #ifdef I2C_USE_FREERTOS
+    #if defined(I2C_USE_FREERTOS) && I2C_USE_FREERTOS == 1
     LOG_DEBUG("[I2C] Inicializando semaforo para o port %d", _port);
     const BaseType_t result = initI2CSemaphore(_port);
     if (result != pdPASS) {
@@ -35,8 +36,8 @@ I2C::I2C(i2c_inst_t *i2c_instance, uint sda_pin, uint scl_pin) {
     #endif
 }
 
-void I2C::begin() {
-    i2c_init(_i2c, 100 * 1000); // Default to 100kHz
+void I2C::begin(uint clock) {
+    i2c_init(_i2c, clock);
     gpio_set_function(_sda, GPIO_FUNC_I2C);
     gpio_set_function(_scl, GPIO_FUNC_I2C);
     gpio_pull_up(_sda);
@@ -53,6 +54,10 @@ void I2C::setClock(uint frequency) {
     i2c_set_baudrate(_i2c, frequency);
 }
 
+i2c_inst_t *I2C::getI2CPort() const {
+    return _i2c;
+}
+
 /**
  * Start a transmission to the specified address.
  * @param address The 7-bit address of the slave device.
@@ -64,7 +69,7 @@ void I2C::beginTransmission(uint8_t address, bool nostop) {
     _txBufferLength = 0;
     _transmitting = true;
     _nostop = nostop;
-    #ifdef I2C_USE_FREERTOS
+    #if defined(I2C_USE_FREERTOS) && I2C_USE_FREERTOS == 1
     const BaseType_t result = takeI2C(_port, portMAX_DELAY);
     if (result != pdPASS) {
         LOG_WARN("[I2C.beginTransaction] Failed to take semaphore for port %d", _port);
@@ -113,9 +118,13 @@ uint8_t I2C::endTransmission(void) {
     if (!_transmitting) {
         return 4; // Not in a transmission
     }
-    int ret = i2c_write_blocking(_i2c, _txAddress, _txBuffer, _txBufferLength, _nostop);
+
+    int ret;
+    if(_txBufferLength > 0 ){
+        ret = i2c_write_blocking(_i2c, _txAddress, _txBuffer, _txBufferLength, _nostop);
+    }
     _transmitting = false;
-    #ifdef I2C_USE_FREERTOS
+    #if defined(I2C_USE_FREERTOS) && I2C_USE_FREERTOS == 1
     const BaseType_t result = releaseI2C(_port);
     if (result != pdPASS) {
         LOG_WARN("[I2C.endTransmission] Failed to release semaphore for port %d", _port);
